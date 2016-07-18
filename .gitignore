@@ -1,0 +1,57 @@
+# Exclude css and css map
+web/src/main/resources/webapp/css/bootstrap.css*
+web/src/main/resources/webapp/css/main.css*
+web/src/main/resources/webapp/css/main-new.css*
+web/src/main/resources/webapp/js/app
+
+# Build
+*.class
+*.log
+.demo_data
+logs
+classes
+target
+target-eclipse
+
+# sbt specific
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+
+
+# IDEA
+*.iml
+*.ipr
+*.iws
+.idea
+.idea_modules
+
+# Eclipse
+.classpath
+.project
+.settings
+.checkstyle
+.fbprefs
+
+
+# NetBeans
+nbproject
+
+# Other
+.sonar-ide.properties
+.clover
+proguard_logs
+
+#Android
+gen
+
+
+#Editor Backup Files
+*~
+*.bak
