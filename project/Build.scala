@@ -28,7 +28,7 @@ object Dependencies {
 
 
 object BuildSettings {
-  val VERSION = "0.1"
+  val VERSION = "0.2-SNAPSHOT"
 
   lazy val projectBuildSettings = basicSettings ++ formattingSettings ++ publishSettings
 
@@ -40,7 +40,6 @@ object BuildSettings {
     description := "Sbt java code fromatter, base on eclipse formatter.",
     licenses +=("Apache 2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     startYear := Some(2016),
-    credentials += Credentials(Path.userHome / ".bintray" / ".credentials"),
     scalacOptions ++= List(
       "-unchecked",
       "-deprecation",
@@ -66,10 +65,11 @@ object BuildSettings {
         .setPreference(SpacesAroundMultiImports, true)
   }
 
+  import bintray.BintrayKeys._
   val publishSettings = Seq(
-    publishMavenStyle := true,
-    publishArtifact in Test := false,
-    publishArtifact in(Compile, packageSrc) := true,
+    credentials += Credentials(Path.userHome / ".bintray" / ".credentials"),
+    publishMavenStyle := false,
+    bintrayOrganization in bintray := None,
     pomExtra :=
       <url>https://github.com/hyysguyang/java-code-formatter</url>
         <licenses>
