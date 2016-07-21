@@ -4,13 +4,15 @@ import java.io._
 import java.nio.charset.Charset
 import java.util.Properties
 
-import org.eclipse.jdt.core.{ JavaCore, ToolFactory }
 import org.eclipse.jdt.core.formatter.CodeFormatter
+import org.eclipse.jdt.core.{ JavaCore, ToolFactory }
 import org.eclipse.jface.text.Document
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 import scala.io.Source
+import scala.xml.{ Node, NodeSeq, XML }
 
 /**
  *
@@ -18,6 +20,42 @@ import scala.io.Source
  * @author <a href="mailto:guyang@lansent.com">Young Gu</a>
  */
 object EclipseJavaFormatter {
+  def loadProperties(eclipseFormatProperties: InputStream) = {
+    import scala.collection.JavaConverters._
+    val options = new Properties()
+    options.load(eclipseFormatProperties)
+    options.asScala.toMap
+  }
+
+  def extractProfileOptions(profile: Option[File]): Option[Map[String, String]] = {
+    profile.filter(_.getName.endsWith(".xml")).map {
+      p =>
+        def extractOption(setting: Node) = {
+          val id = (setting \ "@id").text
+          val value = (setting \ "@value").text
+          id -> value
+        }
+        val settings: NodeSeq = XML.load(new FileInputStream(p)) \\ "setting"
+        val map: Seq[(String, String)] = settings.map(extractOption)
+        map.toMap
+    }
+  }
+
+  /**
+   * Build format options, the later override the previous. That's say: profile <- eclipse preference <- options
+   *
+   * @param profile
+   * @param prefProperties
+   * @param options
+   * @return
+   */
+  def formatOptions(profile: Option[File], prefProperties: Option[File], options: Map[String, String]): Map[String, String] = {
+    val externalOptions = prefProperties.map(o => loadProperties(new FileInputStream(o)))
+    val profileOptions = extractProfileOptions(profile)
+
+    profileOptions.getOrElse(Map.empty) ++ externalOptions.getOrElse(Map.empty) ++ options
+  }
+
   def apply(eclipseFormatProperties: File, utf8: String): EclipseJavaFormatter =
     EclipseJavaFormatter(new FileInputStream(eclipseFormatProperties), utf8)
 

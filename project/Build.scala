@@ -40,6 +40,7 @@ object BuildSettings {
     description := "Sbt java code fromatter, base on eclipse formatter.",
     licenses +=("Apache 2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     startYear := Some(2016),
+    javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions ++= List(
       "-unchecked",
       "-deprecation",

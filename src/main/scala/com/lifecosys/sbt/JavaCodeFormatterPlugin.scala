@@ -16,6 +16,10 @@
 
 package com.lifecosys.sbt
 
+import java.io.{ ByteArrayInputStream, FileInputStream, InputStream }
+import java.util.Properties
+
+import org.eclipse.jdt.core.JavaCore
 import sbt.Keys._
 import sbt.{ AutoPlugin, File, SettingKey, TaskKey, _ }
 
@@ -32,10 +36,15 @@ object JavaCodeFormatterPlugin extends AutoPlugin {
 
     val javaCodeFormatter: TaskKey[Seq[File]] = TaskKey[Seq[File]]("format-java", "Format (Java) sources using SbtJavaCodeFormatter")
 
-    val eclipseFormatterFile: SettingKey[Option[File]] =
+    val eclipseProfileFile: SettingKey[Option[File]] =
       SettingKey[Option[File]](
-        "eclipseFormatterFile",
-        "SbtJavaCodeFormatter eclipse formatter file"
+        "eclipseProfileFile",
+        "SbtJavaCodeFormatter eclipse profile formatter file"
+      )
+    val eclipsePrefFile: SettingKey[Option[File]] =
+      SettingKey[Option[File]](
+        "eclipsePrefFile",
+        "SbtJavaCodeFormatter eclipse preference formatter file"
       )
 
     val eclipseFormatterOptions: SettingKey[String] =
@@ -62,7 +71,8 @@ object JavaCodeFormatterPlugin extends AutoPlugin {
 
   def noConfigSettings = {
     List(
-      eclipseFormatterFile in javaCodeFormatter := None,
+      eclipseProfileFile in javaCodeFormatter := None,
+      eclipsePrefFile in javaCodeFormatter := None,
       eclipseFormatterOptions in javaCodeFormatter := "",
       includeFilter in Global in javaCodeFormatter := "*.java"
     )
@@ -71,9 +81,11 @@ object JavaCodeFormatterPlugin extends AutoPlugin {
   def configSettings: Seq[Setting[_]] = {
     List(
       (sourceDirectories in Global in javaCodeFormatter) := List(javaSource.value),
-      javaCodeFormatter := JavaCodeFormatter(
-        (eclipseFormatterFile in javaCodeFormatter).value,
+      javaCodeFormatter := format(
+        (eclipseProfileFile in javaCodeFormatter).value,
+        (eclipsePrefFile in javaCodeFormatter).value,
         (eclipseFormatterOptions in javaCodeFormatter).value,
+        javacOptions.value.toList,
         (sourceDirectories in javaCodeFormatter).value.toList,
         (includeFilter in javaCodeFormatter).value,
         (excludeFilter in javaCodeFormatter).value,
@@ -84,4 +96,52 @@ object JavaCodeFormatterPlugin extends AutoPlugin {
     )
 
   }
+
+  def format(
+    eclipseProfileFile:      Option[File],
+    eclipsePrefFile:         Option[File],
+    eclipseFormatterOptions: String,
+    javacOptions:            List[String],
+    sourceDirectories:       Seq[File],
+    includeFilter:           FileFilter,
+    excludeFilter:           FileFilter,
+    ref:                     ProjectRef,
+    configuration:           Configuration,
+    streams:                 TaskStreams
+  ): Seq[File] = {
+
+    import EclipseJavaFormatter._
+    val logTag = s"${Reference.display(ref)}($configuration): "
+    streams.log.info(s"$logTag Starting java code formatter task:")
+    val inlineOptions = Option(eclipseFormatterOptions).map {
+      o => loadProperties(new ByteArrayInputStream(o.getBytes))
+    }
+
+    def extractValue(key: String) = javacOptions(javacOptions.indexOf(key) + 1)
+    val sourceLevel = javacOptions.filter(v => v == "-source" || v == "-target").headOption.map(extractValue).getOrElse(sys.props("java.specification.version"))
+
+    val sourceLevelOptions = Map(
+      JavaCore.COMPILER_SOURCE -> sourceLevel,
+      JavaCore.COMPILER_COMPLIANCE -> sourceLevel,
+      JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM -> sourceLevel
+    )
+    val options = formatOptions(eclipseProfileFile, eclipsePrefFile, sourceLevelOptions ++ inlineOptions.getOrElse(Map.empty))
+
+    val files = sourceDirectories.descendantsExcept(includeFilter, excludeFilter).get.toSet
+    def format(file: File) = {
+      streams.log.debug(s"$logTag Formatting file: ${file.getAbsolutePath}")
+      val contents = IO.read(file)
+      val formatted = EclipseJavaFormatter(options).format(contents)
+      if (formatted != contents) {
+        IO.write(file, formatted)
+        streams.log.debug(s"$logTag Formatted file: ${file.getAbsolutePath}")
+        Some(file)
+      } else None
+
+    }
+    val formattedFiles: List[File] = files.filter(_.exists()).flatMap(format).toList
+    streams.log.info(s"$logTag Total: ${files.size}, Formatted: ${formattedFiles.size} ")
+    formattedFiles
+  }
+
 }
