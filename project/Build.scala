@@ -28,7 +28,7 @@ object Dependencies {
 
 
 object BuildSettings {
-  val VERSION = "0.2"
+  val VERSION = "0.3-SNAPSHOT"
 
   lazy val projectBuildSettings = basicSettings ++ formattingSettings ++ publishSettings
 
