@@ -1,5 +1,13 @@
 <code_scheme name="JavaConventions-variant">
   <option name="RIGHT_MARGIN" value="140" />
+  <SqlCodeStyleSettings>
+    <option name="TYPE_CASE" value="1" />
+    <option name="IDENTIFIER_CASE" value="1" />
+    <option name="QUOTED_IDENTIFIER_CASE" value="1" />
+  </SqlCodeStyleSettings>
+  <XML>
+    <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
+  </XML>
   <JavaCodeStyleSettings>
     <option name="DO_NOT_WRAP_AFTER_SINGLE_ANNOTATION" value="true" />
   </JavaCodeStyleSettings>
