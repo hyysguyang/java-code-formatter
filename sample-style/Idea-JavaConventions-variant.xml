@@ -35,8 +35,5 @@
     <option name="BINARY_OPERATION_SIGN_ON_NEXT_LINE" value="true" />
     <option name="TERNARY_OPERATION_WRAP" value="5" />
     <option name="ARRAY_INITIALIZER_WRAP" value="1" />
-    <indentOptions>
-      <option name="INDENT_SIZE" value="8" />
-    </indentOptions>
   </codeStyleSettings>
 </code_scheme>
